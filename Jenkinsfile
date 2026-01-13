@@ -1,10 +1,6 @@
 pipeline {
 	agent any
 
-	options {
-		ansiColor('xterm')
-		skipDefaultCheckout(true)
-	}
 
 	parameters {
 		booleanParam(name: 'AUTO_APPLY', defaultValue: false, description: 'If true, Terraform will apply automatically after plan (use with caution)')
