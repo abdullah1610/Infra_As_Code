@@ -1,0 +1,72 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+    }
+
+    parameters {
+        booleanParam(
+            name: 'CONFIRM_DESTROY',
+            defaultValue: false,
+            description: '⚠️ This will DESTROY all Terraform-managed AWS resources'
+        )
+    }
+
+    stages {
+
+        stage('Safety Check') {
+            steps {
+                script {
+                    if (!params.CONFIRM_DESTROY) {
+                        error("""
+❌ DESTROY BLOCKED ❌
+
+You must explicitly set:
+CONFIRM_DESTROY = true
+
+This safety check prevents accidental deletion.
+""")
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-creds',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    bat 'terraform init -input=false'
+                }
+            }
+        }
+
+        stage('Terraform Destroy') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-creds',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    bat 'terraform destroy -auto-approve'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Terraform infrastructure DESTROYED successfully'
+        }
+        failure {
+            echo '❌ Terraform DESTROY failed – check logs carefully'
+        }
+    }
+}
