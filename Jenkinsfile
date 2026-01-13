@@ -49,21 +49,21 @@ pipeline {
             }
         }
 
-        stage('Terraform Apply') {
-            when {
-                expression { return params.AUTO_APPLY }
-            }
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'aws-creds',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
-                ]) {
-                    bat 'terraform apply -auto-approve tfplan'
-                }
-            }
-        }
-    }
-}
+#        stage('Terraform Apply') {
+#            when {
+#                expression { return params.AUTO_APPLY }
+#            }
+#            steps {
+#                withCredentials([
+#                    usernamePassword(
+#                        credentialsId: 'aws-creds',
+#                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+#                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+#                    )
+#                ]) {
+#                    bat 'terraform apply -auto-approve tfplan'
+#                }
+#            }
+#        }
+#    }
+#}
