@@ -34,7 +34,7 @@ ec2_instances = {
     subnet_id           = "<PUBLIC_SUBNET_ID>"
     security_group_ids  = ["<PUBLIC_SG_ID>"]
     associate_public_ip = true
-    key_name            = "dev-key"
+    key_name            = null                    #key_name            = "dev-key"
     name                = "dev-public-ec2"
   }
 
@@ -45,7 +45,7 @@ ec2_instances = {
     subnet_id           = "<PRIVATE_SUBNET_ID>"
     security_group_ids  = ["<PRIVATE_SG_ID>"]
     associate_public_ip = false
-    key_name            = "dev-key"
+    key_name            = null                    #key_name            = "dev-key"
     name                = "dev-private-ec2"
   }
 }
