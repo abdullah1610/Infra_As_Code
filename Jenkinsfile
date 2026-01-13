@@ -20,7 +20,7 @@ pipeline {
 
 		stage('Terraform Init') {
 			steps {
-				withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+				withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AAKIA2DKZZKZREWQ7NR5I', passwordVariable: 'BUjZOcpcHNYY5FvCdCzSn5nIwHPo8vHEKdcnFYmu')]) {
 					sh 'terraform init -input=false'
 				}
 			}
