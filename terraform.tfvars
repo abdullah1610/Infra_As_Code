@@ -29,7 +29,7 @@ nat_name                 = "dev-nat-gateway"
 # ---------- Public instance  ----------
 ec2_instances = {
   public_ec2 = {
-    ami                 = "ami-0a0f1259dd1c90938" # Amazon Linux 2 (us-east-1)
+    ami                 = "ami-0c02fb55956c7d316"
     instance_type       = "t2.micro"
     subnet_id           = "<PUBLIC_SUBNET_ID>"
     security_group_ids  = ["<PUBLIC_SG_ID>"]
@@ -40,7 +40,7 @@ ec2_instances = {
 
   # ---------- Private instance  ----------
   private_ec2 = {
-    ami                 = "ami-0a0f1259dd1c90938"
+    ami                 = "ami-0c02fb55956c7d316"
     instance_type       = "t2.micro"
     subnet_id           = "<PRIVATE_SUBNET_ID>"
     security_group_ids  = ["<PRIVATE_SG_ID>"]
