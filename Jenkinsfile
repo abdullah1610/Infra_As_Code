@@ -7,6 +7,12 @@ pipeline {
             defaultValue: false,
             description: 'If true, Terraform apply will run automatically'
         )
+
+        booleanParam(
+            name: 'AUTO_DESTROY',
+            defaultValue: false,
+            description: '⚠️ DESTROY all Terraform-managed infrastructure'
+        )
     }
 
     options {
@@ -50,10 +56,10 @@ pipeline {
         }
 
         stage('Terraform Apply') {
-           when {
-                expression { return params.AUTO_APPLY }
+            when {
+                expression { return params.AUTO_APPLY && !params.AUTO_DESTROY }
             }
-           steps {
+            steps {
                 withCredentials([
                     usernamePassword(
                         credentialsId: 'aws-creds',
@@ -62,6 +68,23 @@ pipeline {
                     )
                 ]) {
                     bat 'terraform apply -auto-approve tfplan'
+                }
+            }
+        }
+
+        stage('Terraform Destroy') {
+            when {
+                expression { return params.AUTO_DESTROY && !params.AUTO_APPLY }
+            }
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-creds',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
+                    bat 'terraform destroy -auto-approve'
                 }
             }
         }
