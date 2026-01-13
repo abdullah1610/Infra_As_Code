@@ -1,0 +1,120 @@
+Jenkins pipeline (sample) + required AWS roles/policies
+
+1) Jenkinsfile (Declarative) - sample
+
+pipeline {
+  agent any
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
+    }
+
+    stage('Terraform Init') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+          sh 'terraform init -input=false'
+        }
+      }
+    }
+
+    stage('Terraform Plan') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+          sh 'terraform plan -out=tfplan -input=false'
+        }
+      }
+    }
+
+    stage('Terraform Apply') {
+      steps {
+        input message: 'Apply to AWS?'
+        withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+          sh 'terraform apply -auto-approve tfplan'
+        }
+      }
+    }
+  }
+}
+
+Notes:
+- Store AWS Access Key ID as "Username" and Secret Access Key as "Password" in Jenkins Credentials (id: aws-creds).
+- If Jenkins runs on an EC2 agent, prefer attaching an IAM Role (instance profile) to the agent and avoid static keys.
+
+2) Minimum recommended AWS permissions (high level)
+- S3: for Terraform remote state (GetObject, PutObject, ListBucket, DeleteObject)
+- DynamoDB: for state locking (PutItem, GetItem, DeleteItem, UpdateItem)
+- EC2: create/describe/terminate instances, allocate/associate Elastic IPs, manage security groups, tags
+- VPC: create/modify subnets, route tables, IGW, NAT gateways
+- IAM: PassRole (needed if Terraform creates instances with instance profiles / roles)
+- CloudWatch Logs: Create/Put/Describe
+- KMS: (only if S3 encryption with CMK is used)
+
+3) Example IAM policy JSON (replace ARNs/placeholders with your values)
+
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::YOUR-TF-STATE-BUCKET",
+        "arn:aws:s3:::YOUR-TF-STATE-BUCKET/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+      ],
+      "Resource": "arn:aws:dynamodb:REGION:ACCOUNT_ID:table/YOUR_LOCK_TABLE"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:*",
+        "elasticloadbalancing:*",
+        "ec2:CreateTags",
+        "ec2:DeleteTags"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:Describe*",
+        "vpc:Describe*",
+        "iam:PassRole",
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+
+(Comments: the above uses broad EC2/VPC permissions for convenience. For production, tighten Resource ARNs and prefer least-privilege.)
+
+4) Recommended role options
+- Option A (simple): Create an IAM User with programmatic access, attach the above policy, store keys in Jenkins credentials (aws-creds).
+- Option B (recommended): Run Jenkins agents on EC2 and attach an IAM Role (instance profile) with the policy. No long-lived keys needed.
+- Option C (modern): Use OIDC / AssumeRole (if your CI supports it) so Jenkins can assume a short-lived role.
+
+5) Extra tips
+- If you use S3 backend with server-side encryption via KMS, add KMS permissions for the CMK.
+- Ensure `iam:PassRole` is allowed for the specific role ARNs that Terraform will pass to EC2.
+- Test with limited resources and `terraform plan` first.
+
+---
+Agar chaho to main is file ko aapke S3 bucket ARN aur DynamoDB table ke values ke saath customize karke policy JSON bana doon, ya stricter action-level policy likh doon. Batao kaunsa option chahoge.
